@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from datetime import datetime
+import pytz
 import os
 
 st.title("🌦️ Weather App")
@@ -13,7 +14,7 @@ def get_location():
     try:
         res = requests.get("https://ipinfo.io/json")
         data = res.json()
-        return data.get("city", "Unknown")
+        return data.get("city")
     except:
         return "Unknown"
 
@@ -61,6 +62,7 @@ if st.button("Get Weather"):
                 weather = data["weather"][0]["description"]
                 humidity = data["main"]["humidity"]
                 wind = data["wind"]["speed"]
+                india = pytz.timezone("Asia/Kolkata")
                 now = datetime.now()
 
                 st.write(f"🕒 Date & Time: {now.strftime('%d-%m-%Y %H:%M:%S')}")
