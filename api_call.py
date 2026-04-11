@@ -63,7 +63,7 @@ if st.button("Get Weather"):
                 humidity = data["main"]["humidity"]
                 wind = data["wind"]["speed"]
                 india = pytz.timezone("Asia/Kolkata")
-                now = datetime.now()
+                now = datetime.now(india)
 
                 st.write(f"🕒 Date & Time: {now.strftime('%d-%m-%Y %H:%M:%S')}")
                 st.subheader(f"📍 {data['name']}")
