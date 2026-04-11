@@ -1,27 +1,40 @@
 import streamlit as st
 import requests
 from datetime import datetime
-import geocoder
+import os
 
 st.title("🌦️ Weather App")
 
-api_key = "3ced0f180200e383496b881267b46bc8"
-g = geocoder.ip('me')
-current_city = g.city
+# API key from environment
+api_key = os.getenv("API_KEY")
+
+# Auto location using API
+def get_location():
+    try:
+        res = requests.get("https://ipinfo.io/json")
+        data = res.json()
+        return data.get("city", "Unknown")
+    except:
+        return "Unknown"
+
+current_city = get_location()
 st.write(f"📍 Detected Location: {current_city}")
 
 city = st.text_input("Enter cities (comma separated):")
 
+# Session history (instead of file)
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 if st.button("Get Weather"):
     if not city:
         city = current_city
+
     if city:
         cities = city.split(",")
 
         for c in cities:
             c = c.strip()
-
             if c == "":
                 continue
 
@@ -30,8 +43,9 @@ if st.button("Get Weather"):
 
             if response.status_code == 200:
                 data = response.json()
+
                 def get_icon(weather):
-                    weather = weather.lower()    
+                    weather = weather.lower()
                     if "rain" in weather:
                         return "🌧️ Rainy"
                     elif "cloud" in weather:
@@ -42,11 +56,13 @@ if st.button("Get Weather"):
                         return "🌫️ Hazy"
                     else:
                         return "🌍 Unknown"
+
                 temp = data["main"]["temp"] - 273.15
                 weather = data["weather"][0]["description"]
                 humidity = data["main"]["humidity"]
                 wind = data["wind"]["speed"]
                 now = datetime.now()
+
                 st.write(f"🕒 Date & Time: {now.strftime('%d-%m-%Y %H:%M:%S')}")
                 st.subheader(f"📍 {data['name']}")
                 icon = get_icon(weather)
@@ -56,10 +72,10 @@ if st.button("Get Weather"):
                 st.write(f"💧 Humidity: {humidity}%")
                 st.write(f"🌬️ Wind: {wind}")
                 st.write("---")
-                
 
-                with open("history.txt", "a") as f:
-                    f.write(f"{data['name']} - {round(temp,2)}°C\n")
+                # Save history in session
+                st.session_state.history.append(f"{data['name']} - {round(temp,2)}°C")
+
             elif response.status_code == 404:
                 st.error(f"{c} ❌ city not found")
             elif response.status_code == 401:
@@ -70,12 +86,10 @@ if st.button("Get Weather"):
     else:
         st.warning("Please enter a city ⚠️")
 
-
-
+# Show history
 if st.button("Show History"):
-    try:
-        with open("history.txt", "r") as f:
-            st.text(f.read())
-    except FileNotFoundError:
-        
-        st.warning("No history found yet 📂")
+    if st.session_state.history:
+        for h in st.session_state.history:
+            st.write(h)
+    else:
+        st.warning("No history yet 📂")
